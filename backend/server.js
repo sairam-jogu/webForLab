@@ -4,10 +4,12 @@ const jwt = require('jsonwebtoken');
 const { connectToDb } = require('./mongodb');
 const { default: mongoose } = require('mongoose');
 const app = express();
-
+const cors = require('cors')
 // connectToDb();
 
 app.use(express.json());
+
+app.use(cors());
 
 const getToken = (name) => {
     const token = jwt.sign(name, "abc@2003");
@@ -16,12 +18,12 @@ const getToken = (name) => {
 app.post("/signup", async (req, res) => {
     const { name, email, password } = await req.body;
     if (!name || !email || !password) {
-        return res.status(500).json("All fields are mandatory");
+        return res.status(500).json({"message":"All fields are mandatory"});
     }
     const user = await UserModel.findOne({ name });
 
     if (user) {
-        return res.status(500).json("User already Exists");
+        return res.status(500).json({"message":"User already Exists"});
     }
 
     const newUser = await UserModel.create({ name, email, password })
@@ -29,23 +31,23 @@ app.post("/signup", async (req, res) => {
     const token = getToken(name);
     console.log(token);
 
-    return res.status(200).json({ "User Create:": token });
+    return res.status(200).json({ "token:": token });
 
 })
 
 app.post("/login", async (req, res) => {
     const { name, password } = await req.body;
     if (!name || !password) {
-        return res.status(500).json("All fields are mandatory");
+        return res.status(500).json({"message":"All fields are mandatory"});
     }
 
     try {
         const user = await UserModel.findOne({ name });
-        if (user) {
-            return res.status(500).json("User already Exists");
+        if (!user) {
+            return res.status(500).json({"message":"User Not found"});
         }
         const token = getToken(name);
-        return res.status(200).json("User: ", name, "token: ", token);
+        return res.status(200).json({"User": name, "token": token});
     } catch (error) {
         return res.status(500).json(error);
     }
